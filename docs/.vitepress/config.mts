@@ -795,6 +795,16 @@ export default extendConfig(
                   ],
                 },
                 {
+                  text: "Workload",
+                  collapsed: true,
+                  items: [
+                    { text: "Overview", link: "/api-reference/workload/overview" },
+                    { text: "Get Work Item Estimate", link: "/api-reference/workload/get-workload-estimate" },
+                    { text: "Update Work Item Estimate", link: "/api-reference/workload/update-workload-estimate" },
+                    { text: "List Rollups", link: "/api-reference/workload/list-workload-rollups" },
+                  ],
+                },
+                {
                   text: "Epics",
                   collapsed: true,
                   items: [
