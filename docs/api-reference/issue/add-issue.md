@@ -16,6 +16,14 @@ keywords: plane, plane api, rest api, api integration, issue, create a work item
 
 Create a new work item in the specified project with the provided details.
 
+> **Creation defaults (fork extension).** This fork fills two fields when the request body
+> does not carry them: an absent `assignees` assigns the authenticated caller, and an absent
+> `target_date` becomes today. **An absent field and an explicitly empty one are not the
+> same thing** — `"assignees": []` and `"target_date": null` are honoured as deliberate
+> choices and are left alone. See [Creation defaults](#creation-defaults) below for the full
+> contract. Not part of the upstream Plane API.
+
+
 <div class="params-section">
 
 ### Path Parameters
@@ -45,7 +53,8 @@ The workspace_slug represents the unique workspace identifier for a workspace in
 
 <ApiParam name="assignees" type="array" :required="false">
 
-Assignees.
+Assignees. **Omit the key** to have the work item assigned to the authenticated caller;
+send `[]` to create it deliberately unassigned. See [Creation defaults](#creation-defaults).
 
 </ApiParam>
 
@@ -115,7 +124,9 @@ Start date.
 
 <ApiParam name="target_date" type="string" :required="false">
 
-Target date.
+Target date. **Omit the key** to have it set to today in the caller's own timezone; send
+`null` to create the work item deliberately without a due date. See
+[Creation defaults](#creation-defaults).
 
 </ApiParam>
 
@@ -199,6 +210,65 @@ Type.
 ### Scopes
 
 `projects.work_items:write`
+
+</div>
+
+<div class="params-section">
+
+### Creation defaults
+
+Fork extension; not part of the upstream Plane API.
+
+The server fills two fields when the request body does not carry them:
+
+- **No `assignees` key** — the work item is assigned to the authenticated caller.
+- **No `target_date` key** — the due date is set to today.
+
+#### Absent is not the same as empty
+
+This is the only part of the behaviour a client can get wrong silently, because there is no
+error either way:
+
+| Request body | Result |
+| --- | --- |
+| no `assignees` key | assigned to the caller |
+| `"assignees": []` | left unassigned — a deliberate choice, honoured |
+| `"assignees": ["<uuid>"]` | exactly that, unchanged |
+| no `target_date` key | today, in the caller's timezone |
+| `"target_date": null` | no due date — a deliberate choice, honoured |
+| `"target_date": "2026-12-25"` | exactly that, unchanged |
+
+A client that initialises unset optional fields to `[]` or `null` before serialising will opt
+every one of its users out of the defaults. If you are using an SDK, check whether it strips
+null-valued keys before the request: a serialiser that drops them (Python's
+`model_dump(exclude_none=True)`) makes `null` unreachable, so `"target_date": null` cannot be
+expressed on create and the opt-out has to be a follow-up `PATCH`. One that preserves them
+(`JSON.stringify`) lets both intents through.
+
+#### Assignee precedence
+
+1. The project's own `default_assignee`, when set and still an active project member at
+   `role >= 15`. Unchanged from before this feature, and it applies **even when `assignees`
+   is an empty list**.
+2. Otherwise the authenticated caller — but only when the `assignees` key was absent.
+3. If neither is an active project member at `role >= 15`, the work item is created
+   unassigned rather than assigned to a user who cannot access it.
+
+#### Due-date resolution
+
+`target_date` defaults to **today in the authenticated caller's own timezone**
+(`user_timezone` on their profile), not the server's UTC date. For a caller at UTC+7 the two
+disagree for the first seven hours of their day.
+
+When `start_date` is set and later than that date, the default is `start_date` instead. This
+guarantees the default can never trigger the endpoint's own `Start date cannot exceed target
+date` validation — a request carrying a future `start_date` and no `target_date` succeeded
+before this feature and still succeeds.
+
+#### Scope
+
+Updates never default: a `PATCH` clearing either field leaves it cleared. Intake creation is
+excluded and receives neither default. Drafts, sub-work items and epics are included.
 
 </div>
 
