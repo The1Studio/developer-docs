@@ -129,3 +129,9 @@ Modules are smaller, focused projects that help you group and organize issues wi
 
 </div>
 </div>
+
+## Cascading a module's status onto its work items
+
+Moving a module to `completed` or `cancelled` can optionally cascade that status onto the
+module's live work items and their live descendants — see
+[Module Cascade](/api-reference/module-cascade/overview), a Plane fork extension.

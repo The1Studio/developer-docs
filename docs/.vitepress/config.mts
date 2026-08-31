@@ -714,6 +714,15 @@ export default extendConfig(
                   ],
                 },
                 {
+                  text: "Module Cascade",
+                  collapsed: true,
+                  items: [
+                    { text: "Overview", link: "/api-reference/module-cascade/overview" },
+                    { text: "Preview Cascade", link: "/api-reference/module-cascade/preview-module-cascade" },
+                    { text: "Apply Cascade", link: "/api-reference/module-cascade/apply-module-cascade" },
+                  ],
+                },
+                {
                   text: "Pages",
                   collapsed: true,
                   items: [
